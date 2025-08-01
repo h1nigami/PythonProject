@@ -1,0 +1,7 @@
+/data/database.db
+/database.db
+/.idea/misc.xml
+/.idea/vcs.xml
+data/.env
+*.pyc
+*.idea
