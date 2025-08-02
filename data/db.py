@@ -13,9 +13,12 @@ engine = create_engine('sqlite:///database.db')
 
 class DataBase:
     def __init__(self):
-        Base.metadata.create_all(engine)
         self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
+
+    @staticmethod
+    def create_table():
+        Base.metadata.create_all(engine)
 
     def add_teacher(self, tg_id:int, name:str, group:Group):
        try:
@@ -28,4 +31,29 @@ class DataBase:
        finally:
             self.session.close()
 
+    def add_admin(self, tg_id:int, name:str, group:Group|None):
+        try:
+            if group is None:
+                admin = Teacher(tg_id, name, is_admin=True)
+                self.session.add(admin)
+                self.session.commit()
+                self.session.close()
+            else:
+                admin = Teacher(tg_id, name, group, is_admin=True)
+                self.session.add(admin)
+                self.session.commit()
+                self.session.close()
+        except:
+            self.session.rollback()
+        finally:
+            self.session.close()
 
+    def is_admin(self, tg_id:int)->bool:
+        teacher = self.session.query(Teacher).get(tg_id)
+        if teacher.is_admin:
+            return True
+        else:
+            return False
+
+
+db = DataBase()

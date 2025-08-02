@@ -1,1 +1,1 @@
-from .db import DataBase, token
+from .db import DataBase, token, db
