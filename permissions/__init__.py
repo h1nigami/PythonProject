@@ -1,1 +1,1 @@
-from admin import IsAdmin
+from .admin import *

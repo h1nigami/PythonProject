@@ -6,25 +6,27 @@ Base = declarative_base()
 
 
 class Teacher(Base):
-    __tablename__ = 'teacher'
+    """Модель учителя"""
+    __tablename__ = 'teachers'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     tg_id = Column(BigInteger, nullable=False, unique=True)
     name = Column(String, nullable=False)
     groups = relationship('Group', back_populates='teacher')
     is_admin = Column(Boolean, nullable=False, default=False)
+    scores = Column(Integer, nullable=False, default=100)
 
     def __repr__(self):
         return f"<Teacher(id={self.id}, name='{self.name}')>"
 
 
 class Group(Base):
-    __tablename__ = 'group'
+    """Модель группы"""
+    __tablename__ = 'groups'
 
-    id = Column(Integer, primary_key=True)
-    group_id = Column(Integer, nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    teacher_id = Column(BigInteger, ForeignKey('teacher.id'), nullable=False)
+    teacher_id = Column(BigInteger, ForeignKey('teachers.id'), nullable=True)
 
     teacher = relationship('Teacher', back_populates='groups')
 

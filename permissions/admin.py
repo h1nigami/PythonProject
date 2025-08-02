@@ -1,8 +1,15 @@
 from aiogram.filters import Filter
 from aiogram import types
-from data.db import db
+from data import DataBase
 
-class IsAdmin(Filter):
-    async def __call__(self, message: types.Message, tg_id: int):
-        is_admin = db.is_admin(message.from_user.id)
-        return is_admin
+db = DataBase()
+
+class IsAdminMessage(Filter):
+    async def __call__(self, message: types.Message):
+        teacher = db.get_teacher(message.from_user.id)
+        return teacher.is_admin
+
+class IsAdminCall(Filter):
+    async def __call__(self, call: types.CallbackQuery):
+        teacher = db.get_teacher(call.from_user.id)
+        return teacher.is_admin
