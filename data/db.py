@@ -73,6 +73,17 @@ class DataBase:
             print(e)
             self.session.rollback()
 
+    def get_all_teachers(self) -> list[Teacher]:
+        """
+        Возвращает всех учителей
+        :return: list с обьектами Teacher
+        """
+        try:
+            teachers = self.session.query(Teacher).all()
+            return teachers
+        except Exception as e:
+            self.session.rollback()
+
     def subtract_score(self, tg_id: int, value: int) -> None:
         """
         Уменьшает баллы учителя на указанное значение.

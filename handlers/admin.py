@@ -9,7 +9,7 @@ from states import AddGroup, AddTeacher
 
 from aiogram import types, html, F
 
-from keyboards.admin.inline import admin_panel, nicho
+from keyboards.admin.inline import admin_panel, nicho, teachers
 
 db = DataBase()
 
@@ -17,14 +17,22 @@ db = DataBase()
 async def _id(message: types.Message):
     return await message.answer(f'Ваш id: {message.from_user.id}')
 
+@dp.callback_query(F.data == 'exit')
+async def start_at_call(call: types.CallbackQuery, state: FSMContext):
+    return await call.message.edit_text('Админ панель', reply_markup=admin_panel())
+
 @dp.message(F.text == '308012')
 async def start(message: types.Message, state: FSMContext):
     return await message.answer('Админ панель', reply_markup=admin_panel())
 
+@dp.callback_query(F.data == 'list_teachers')
+async def list_teachers(call: types.CallbackQuery, state: FSMContext):
+    return await call.message.edit_text('Список учителей', inline_message_id=call.inline_message_id, reply_markup=teachers(db.get_all_teachers()))
+
 @dp.callback_query(F.data == 'new_teacher')
 async def new_teacher(callback_query: types.CallbackQuery, state: FSMContext):
     await state.set_state(AddTeacher.name)
-    await callback_query.answer("Введите имя учителя")
+    await callback_query.message.answer("Введите имя учителя")
 
 @dp.message(AddTeacher.name)
 async def add_teacher(message: types.Message, state: FSMContext):
