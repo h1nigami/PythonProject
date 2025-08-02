@@ -7,7 +7,7 @@ from permissions import IsAdminCall, IsAdminMessage
 
 from states import AddGroup, AddTeacher
 
-from aiogram import types, html, F
+from aiogram import types, F
 
 from keyboards.admin.inline import admin_panel, nicho, teachers
 
@@ -50,12 +50,3 @@ async def add_teacher(message: types.Message, state: FSMContext):
     db.add_teacher(name=data['name'], tg_id=data['tg_id'])
     await message.answer('Учитель добавлен в общий список')
     await state.clear()
-
-
-@dp.callback_query(F.data == '/panel')
-async def panel(call: types.CallbackQuery):
-    return await call.message.edit_text(text='Чо хотел', inline_message_id=call.inline_message_id, reply_markup=nicho())
-
-@dp.callback_query(F.data == '/nicho')
-async def poh(call: types.CallbackQuery):
-    return await call.message.edit_text(text='Даунище', inline_message_id=call.inline_message_id, reply_markup=admin_panel())
