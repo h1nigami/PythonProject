@@ -1,13 +1,48 @@
+from aiogram.fsm.context import FSMContext
+
+from data import DataBase
+
 from loader import dp
 from permissions import IsAdminCall, IsAdminMessage
+
+from states import AddGroup, AddTeacher
 
 from aiogram import types, html, F
 
 from keyboards.admin.inline import admin_panel, nicho
 
+db = DataBase()
+
+@dp.message(F.text == '/id')
+async def _id(message: types.Message):
+    return await message.answer(f'Ваш id: {message.from_user.id}')
+
 @dp.message(F.text == '308012')
-async def start(message: types.Message):
+async def start(message: types.Message, state: FSMContext):
     return await message.answer('Админ панель', reply_markup=admin_panel())
+
+@dp.callback_query(F.data == 'new_teacher')
+async def new_teacher(callback_query: types.CallbackQuery, state: FSMContext):
+    await state.set_state(AddTeacher.name)
+    await callback_query.answer("Введите имя учителя")
+
+@dp.message(AddTeacher.name)
+async def add_teacher(message: types.Message, state: FSMContext):
+    await state.update_data(name=message.text)
+    await message.answer('Теперь введите его телеграмм id')
+    await state.set_state(AddTeacher.tg_id)
+
+@dp.message(AddTeacher.tg_id)
+async def add_teacher(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        await message.answer('Введите его айди в цифровом виде')
+        return
+    await state.update_data(tg_id=int(message.text))
+    data = await state.get_data()
+    db.add_teacher(name=data['name'], tg_id=data['tg_id'])
+    await message.answer('Учитель добавлен в общий список')
+    await state.clear()
+
 
 @dp.callback_query(F.data == '/panel')
 async def panel(call: types.CallbackQuery):

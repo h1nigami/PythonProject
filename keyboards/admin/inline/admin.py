@@ -3,7 +3,7 @@ from data import DataBase
 
 def admin_panel() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Панель', callback_data='/panel')
+    builder.button(text='Новый учитель', callback_data='new_teacher')
     return builder.as_markup()
 
 def nicho() -> InlineKeyboardMarkup:
