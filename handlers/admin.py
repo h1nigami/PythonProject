@@ -27,7 +27,8 @@ async def start(message: types.Message, state: FSMContext):
 
 @dp.callback_query(F.data == 'list_teachers')
 async def list_teachers(call: types.CallbackQuery, state: FSMContext):
-    return await call.message.edit_text('Список учителей', inline_message_id=call.inline_message_id, reply_markup=teachers(db.get_all_teachers()))
+    return await call.message.edit_text('Список учителей', inline_message_id=call.inline_message_id, reply_markup=teachers(
+        db.get_all_teachers))
 
 @dp.callback_query(F.data == 'new_teacher')
 async def new_teacher(callback_query: types.CallbackQuery, state: FSMContext):
