@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
+
+from data.models import Teacher
 from .models import *
 from dotenv import load_dotenv
 import os
@@ -53,6 +55,26 @@ class DataBase:
             self.session.rollback()
             raise
 
+    def delete_teacher(self, tg_id: int) -> None:
+        """
+        Удаляет учителя из базы данных
+        Args:
+            tg_id: Telegram ID
+
+        Raises:
+            SQLAlchemyError: Не найден учитель
+        """
+        try:
+            teacher = self.session.query(Teacher).filter_by(tg_id=tg_id).first()
+            self.session.delete(teacher)
+            self.session.commit()
+            self.session.close()
+            self.logger.info(f'Удален учитель {teacher.name}')
+        except Exception as e:
+            self.session.rollback()
+            self.logger.info(f'Ошибка при удалении {e}')
+            raise
+
     def get_teacher(self, tg_id: int) -> Teacher | None:
         """
         Возвращает объект учителя по Telegram ID.
@@ -72,8 +94,10 @@ class DataBase:
         except Exception as e:
             print(e)
             self.session.rollback()
+            return None
 
-    def get_all_teachers(self) -> list[Teacher]:
+    @property
+    def get_all_teachers(self) -> list[type[Teacher]] | None:
         """
         Возвращает всех учителей
         :return: list с обьектами Teacher
@@ -82,7 +106,9 @@ class DataBase:
             teachers = self.session.query(Teacher).all()
             return teachers
         except Exception as e:
+            self.logger.info(f'Ошибка: {e}')
             self.session.rollback()
+            return None
 
     def subtract_score(self, tg_id: int, value: int) -> None:
         """
