@@ -19,6 +19,7 @@ async def _id(message: types.Message):
 
 @dp.callback_query(F.data == 'exit')
 async def start_at_call(call: types.CallbackQuery, state: FSMContext):
+    await state.clear()
     return await call.message.edit_text('Админ панель', reply_markup=admin_panel())
 
 @dp.message(F.text == '308012')
@@ -49,7 +50,7 @@ async def add_teacher(message: types.Message, state: FSMContext):
     await state.update_data(tg_id=int(message.text))
     data = await state.get_data()
     db.add_teacher(name=data['name'], tg_id=data['tg_id'])
-    await message.answer('Учитель добавлен в общий список')
+    await message.answer('Учитель добавлен в общий список', reply_markup=main_menu())
     await state.clear()
 
 @dp.callback_query(F.data.startswith('teacher:'))
@@ -57,9 +58,10 @@ async def teacher_about(callback_query: types.CallbackQuery, state: FSMContext):
     data = callback_query.data.split(':')[1]
     teacher = db.get_teacher(tg_id=int(data))
     if teacher is not None:
+        group_names = ', '.join([group.name for group in teacher.groups])
         await callback_query.message.edit_text(text=f'''
 Учитель {teacher.name}
-Его группы: {''.join([group for group in teacher.groups])}
+Его группы: {group_names}
 Косяки: {teacher.notes}
 Баллы: {teacher.scores}
 ''',
@@ -72,7 +74,23 @@ async def teacher_about(callback_query: types.CallbackQuery, state: FSMContext):
 async def put_or_delete(call: types.CallbackQuery, state: FSMContext):
     data = call.data.split(':')
     if data[0] == 'misstake':
-        await call.message.edit_text('<UNK> <UNK> <UNK>', reply_markup=main_menu())
+        await call.message.edit_text('Какой косяк у дауна', reply_markup=main_menu())
     elif data[0] == 'delete':
         db.delete_teacher(tg_id=int(data[1]))
         await call.message.edit_text('Удалил дауна', reply_markup=main_menu())
+
+@dp.callback_query(F.data.startswith('new_group:'))
+async def new_group(call: types.CallbackQuery, state: FSMContext):
+    data = call.data.split(':')
+    await state.set_state(AddGroup.group_name)
+    await state.update_data(tg_id=int(data[-1]))
+    await call.message.answer(text='Введите название группы', reply_markup=main_menu())
+
+@dp.message(AddGroup.group_name)
+async def add_group(message: types.Message, state: FSMContext):
+    await state.update_data(group_name=message.text)
+    data = await state.get_data()
+    db.create_group(group_name=data['group_name'], teacher_tg_id=data['tg_id'])
+    await message.answer('Добавлена группа', reply_markup=main_menu())
+    await state.clear()
+
