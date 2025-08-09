@@ -15,6 +15,7 @@ class Teacher(Base):
     groups = relationship('Group', back_populates='teacher')
     is_admin = Column(Boolean, nullable=False, default=False)
     scores = Column(Integer, nullable=False, default=100)
+    notes = Column(String, nullable=True)
 
     def __repr__(self):
         return f"<Teacher(id={self.id}, name='{self.name}')>"

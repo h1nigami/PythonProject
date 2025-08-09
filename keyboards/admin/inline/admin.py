@@ -9,12 +9,20 @@ def admin_panel() -> InlineKeyboardMarkup:
 def teachers(teachers: list) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for teacher in teachers:
-        builder.button(text=teacher.name, callback_data=str(teacher.tg_id))
+        builder.button(text=teacher.name, callback_data=f'teacher:{teacher.tg_id}')
     builder.button(text='<< Главное меню', callback_data='exit')
     builder.adjust(1)
     return builder.as_markup()
 
-def nicho() -> InlineKeyboardMarkup:
+def about(teacher) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
-    builder.button(text='Ничо', callback_data='/nicho')
+    builder.button(text='Косяк', callback_data=f'misstake:{teacher.tg_id}')
+    builder.button(text='Удалить', callback_data=f'delete:{teacher.tg_id}')
+    builder.button(text='<< Главное меня', callback_data='exit')
+    builder.adjust(1)
+    return builder.as_markup()
+
+def main_menu() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text='<< Главное меню', callback_data='exit')
     return builder.as_markup()
