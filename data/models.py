@@ -12,7 +12,7 @@ class Teacher(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     tg_id = Column(BigInteger, nullable=False, unique=True)
     name = Column(String, nullable=False)
-    groups = relationship('Group', back_populates='teacher')
+    groups = relationship(argument='Group', back_populates='teacher')
     is_admin = Column(Boolean, nullable=False, default=False)
     scores = Column(Integer, nullable=False, default=100)
     notes = Column(String, nullable=True)
@@ -27,7 +27,7 @@ class Group(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
-    teacher_id = Column(BigInteger, ForeignKey('teachers.id'), nullable=True)
+    teacher_id = Column(BigInteger, ForeignKey('teachers.tg_id'), nullable=True)
 
     teacher = relationship('Teacher', back_populates='groups')
 

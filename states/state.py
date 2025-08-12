@@ -11,4 +11,5 @@ class AddTeacher(StatesGroup):
 class Misstake(StatesGroup):
     tg_id = State()
     problem = State()
+    group_name = State()
     scores = State()

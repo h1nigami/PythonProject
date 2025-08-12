@@ -1,8 +1,10 @@
+from tokenize import group
+
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from data.models import Teacher
+from data.models import Teacher, Group
 from .models import *
 from dotenv import load_dotenv
 import os
@@ -216,4 +218,17 @@ class DataBase:
             return None
         finally:
             self.session.close()
+
+    def get_all_groups(self) -> list[type[Group]]:
+        groups = self.session.query(Group).all()
+        return groups
+
+    def get_teachers_group(self, tg_id: int) -> list[Group] | None:
+        groups = self.session.query(Group).filter_by(teacher_id=tg_id).all()
+        return groups
+
+    def get_one_group(self, id: int) -> Group | None:
+        group = self.session.query(Group).filter_by(id=id).first()
+        return group
+
 
