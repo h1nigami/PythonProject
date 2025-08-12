@@ -1,1 +1,1 @@
-from .db import DataBase, token, owner
+from .db import DataBase, TOKEN, OWNER_ID

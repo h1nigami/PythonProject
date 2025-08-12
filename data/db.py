@@ -1,20 +1,19 @@
-from tokenize import group
+import logging
+import os
 
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from data.models import Teacher, Group
+from data.models import Group
 from .models import *
-from dotenv import load_dotenv
-import os
-import logging
 
 load_dotenv(verbose=True)
 
-token = str(os.getenv('token'))
+TOKEN = str(os.getenv('token'))
 
-owner = int(os.getenv('owner'))
+OWNER_ID = int(os.getenv('owner'))
 
 engine = create_engine('sqlite:///database.db')
 
@@ -23,7 +22,7 @@ class DataBase:
     """Класс для работы с базой данных бота, управляющий учителями и группами."""
 
     def __init__(self):
-        """Инициализирует подключение к базе данных и настраивает логгирование."""
+        """Инициализирует подключение к базе данных и настраивает логирование."""
         self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
         logging.basicConfig(level=logging.INFO)
@@ -102,7 +101,7 @@ class DataBase:
     def get_all_teachers(self) -> list[type[Teacher]] | None:
         """
         Возвращает всех учителей
-        :return: list с обьектами Teacher
+        :return: list с объектами Teacher
         """
         try:
             teachers = self.session.query(Teacher).all()
@@ -119,6 +118,7 @@ class DataBase:
         Args:
             tg_id: Telegram ID учителя
             value: Количество баллов для вычитания
+            note: Заметка
 
         Raises:
             SQLAlchemyError: При ошибках работы с базой данных
@@ -158,7 +158,8 @@ class DataBase:
                 self.session.add(admin)
                 self.session.commit()
                 self.session.close()
-        except:
+        except Exception as e:
+            self.logger.warning(e)
             self.session.rollback()
         finally:
             self.session.close()
@@ -223,12 +224,12 @@ class DataBase:
         groups = self.session.query(Group).all()
         return groups
 
-    def get_teachers_group(self, tg_id: int) -> list[Group] | None:
+    def get_teachers_group(self, tg_id: int) -> list[type[Group]]:
         groups = self.session.query(Group).filter_by(teacher_id=tg_id).all()
         return groups
 
-    def get_one_group(self, id: int) -> Group | None:
-        group = self.session.query(Group).filter_by(id=id).first()
+    def get_one_group(self, database_id: int) -> Group | None:
+        group = self.session.query(Group).filter_by(id=database_id).first()
         return group
 
 

@@ -1,17 +1,21 @@
 from aiogram.fsm.context import FSMContext
-from data import DataBase, owner
+from data import DataBase, OWNER_ID
 from loader import dp, bot
 from permissions import IsAdminCall, IsAdminMessage
 from states import AddGroup, AddTeacher, Misstake
 from aiogram import types, F
 from keyboards.admin.inline import *
+from sqlalchemy import text
 
 db = DataBase()
+db.session.execute(text("PRAGMA journal_mode = WAL"))
+db.session.execute(text("PRAGMA synchronous=NORMAL"))
+db.session.commit()
 pending_teachers = dict()
 
 
 @dp.message(F.text == '/start')
-async def handle_start(message: types.Message, state: FSMContext):
+async def handle_start(message: types.Message):
     teacher = db.get_teacher(message.from_user.id)
     if not teacher:
         pending_teachers[message.from_user.id] = {
@@ -20,7 +24,7 @@ async def handle_start(message: types.Message, state: FSMContext):
         }
         await message.answer('🔄 Ваш запрос на регистрацию отправлен администратору')
         await bot.send_message(
-            chat_id=owner,
+            chat_id=OWNER_ID,
             text=f'📩 Новый запрос на регистрацию:\n'
                  f'👤 Пользователь: @{message.from_user.username}\n'
                  f'🆔 ID: {message.from_user.id}',
@@ -34,7 +38,7 @@ async def handle_start(message: types.Message, state: FSMContext):
 
 
 @dp.callback_query(F.data.startswith('registration:'))
-async def approve_teacher(callback: types.CallbackQuery, state: FSMContext):
+async def approve_teacher(callback: types.CallbackQuery):
     _, tg_id, username = callback.data.split(':')
     tg_id = int(tg_id)
 
@@ -141,13 +145,13 @@ async def show_teacher_details(callback: types.CallbackQuery):
         )
         return
 
-    groups = ', '.join([group.name for group in teacher.groups]) if teacher.groups else 'не назначены'
+    groups_list = ', '.join([group.name for group in teacher.groups]) if teacher.groups else 'не назначены'
     notes = teacher.notes if teacher.notes else 'отсутствуют'
 
     await callback.message.edit_text(
         text=f'👨‍🏫 Профиль преподавателя:\n\n'
              f'📌 ФИО: {teacher.name}\n'
-             f'👥 Группы: {groups}\n'
+             f'👥 Группы: {groups_list}\n'
              f'📝 Замечания: {notes}\n'
              f'⭐ Баллы: {teacher.scores}',
         reply_markup=about(teacher)
@@ -165,7 +169,7 @@ async def delete_teacher(call: types.CallbackQuery):
     )
 
 
-@dp.callback_query(F.data.startswith('misstake:'))
+@dp.callback_query(F.data.startswith('mistake:'))
 async def report_mistake(call: types.CallbackQuery, state: FSMContext):
     teacher_id = int(call.data.split(':')[1])
     await state.set_state(Misstake.problem)
@@ -222,8 +226,8 @@ async def process_score_deduction(msg: types.Message, state: FSMContext):
     await state.update_data(scores=int(msg.text))
     data = await state.get_data()
 
-    group_info = f"в группе {data['group'].name} " if data.get('group') else ""
-    problem_text = f"{group_info}{data['problem']}"
+    group_info = f"В группе: {str(data['group'].name)} " if data.get('group') else ""
+    problem_text = f"{group_info}{str(data['problem']).lower()}"
 
     db.subtract_score(
         tg_id=data['tg_id'],
