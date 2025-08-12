@@ -110,7 +110,7 @@ class DataBase:
             self.session.rollback()
             return None
 
-    def subtract_score(self, tg_id: int, value: int) -> None:
+    def subtract_score(self, tg_id: int, value: int, note: str) -> None:
         """
         Уменьшает баллы учителя на указанное значение.
 
@@ -123,10 +123,12 @@ class DataBase:
         """
         try:
             teacher = self.session.query(Teacher).filter_by(tg_id=tg_id).first()
-            teacher.score -= value
+            teacher.scores -= value
+            teacher.notes = note
             self.session.commit()
             self.session.close()
-        except:
+        except Exception as e:
+            self.logger.info(f'Ошибка {e}')
             self.session.rollback()
         finally:
             self.session.close()

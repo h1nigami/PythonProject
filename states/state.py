@@ -7,3 +7,8 @@ class AddGroup(StatesGroup):
 class AddTeacher(StatesGroup):
     tg_id = State()
     name = State()
+
+class Misstake(StatesGroup):
+    tg_id = State()
+    problem = State()
+    scores = State()

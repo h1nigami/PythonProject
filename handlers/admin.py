@@ -5,7 +5,7 @@ from data import DataBase
 from loader import dp
 from permissions import IsAdminCall, IsAdminMessage
 
-from states import AddGroup, AddTeacher
+from states import AddGroup, AddTeacher, Misstake
 
 from aiogram import types, F
 
@@ -60,7 +60,7 @@ async def teacher_about(callback_query: types.CallbackQuery, state: FSMContext):
     if teacher is not None:
         group_names = ', '.join([group.name for group in teacher.groups])
         await callback_query.message.edit_text(text=f'''
-Учитель {teacher.name}
+Учитель: {teacher.name}
 Его группы: {group_names}
 Косяки: {teacher.notes}
 Баллы: {teacher.scores}
@@ -74,10 +74,30 @@ async def teacher_about(callback_query: types.CallbackQuery, state: FSMContext):
 async def put_or_delete(call: types.CallbackQuery, state: FSMContext):
     data = call.data.split(':')
     if data[0] == 'misstake':
-        await call.message.edit_text('Какой косяк у дауна', reply_markup=main_menu())
+        await state.set_state(Misstake.problem)
+        await state.update_data(tg_id=int(data[1]))
+        await call.message.edit_text('Какой косяк че не так сделал', reply_markup=main_menu())
     elif data[0] == 'delete':
         db.delete_teacher(tg_id=int(data[1]))
         await call.message.edit_text('Удалил дауна', reply_markup=main_menu())
+
+@dp.message(Misstake.problem)
+async def _misstake(msg: types.Message, state: FSMContext):
+    await state.update_data(problem=msg.text)
+    await state.set_state(Misstake.scores)
+    await msg.answer('Сколько баллов снимаем')
+
+@dp.message(Misstake.scores)
+async def substract(msg: types.Message, state: FSMContext):
+    if not msg.text.isdigit():
+        await msg.answer('Введи число')
+    await state.update_data(scores=msg.text)
+    data = await state.get_data()
+    db.subtract_score(tg_id=int(data['tg_id']), value=int(data['scores']), note=data['problem'])
+    await msg.answer('Косяк записан', reply_markup=main_menu())
+    await state.clear()
+
+
 
 @dp.callback_query(F.data.startswith('new_group:'))
 async def new_group(call: types.CallbackQuery, state: FSMContext):
