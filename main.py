@@ -8,6 +8,7 @@ from loader import bot
 
 async def start():
     DataBase.create_table()
+    await bot.delete_webhook()
     print('Бот запущен')
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
     await dp.start_polling(bot)

@@ -1,8 +1,8 @@
 from aiogram.fsm.context import FSMContext
 
-from data import DataBase
+from data import DataBase, owner
 
-from loader import dp
+from loader import dp, bot
 from permissions import IsAdminCall, IsAdminMessage
 
 from states import AddGroup, AddTeacher, Misstake
@@ -13,9 +13,38 @@ from keyboards.admin.inline import *
 
 db = DataBase()
 
-@dp.message(F.text == '/id')
-async def _id(message: types.Message):
-    return await message.answer(f'Ваш id: {message.from_user.id}')
+pending_teachers = dict()
+
+@dp.message(F.text == '/start')
+async def _id(message: types.Message, state: FSMContext):
+    teacher = db.get_teacher(message.from_user.id)
+    if not teacher:
+        pending_teachers[message.from_user.id] = {
+            'tg_id': message.from_user.id,
+            'username': message.from_user.username,
+        }
+        await message.answer(f'Я отправил заявку администратору на вашу регистрацию в качестве преподавателя')
+        await bot.send_message(chat_id=owner, text=f'Пользователь @{message.from_user.username} отправил запрос на регистрацию, регистрируем?',
+                               reply_markup=teacher_registration(tg_id=message.from_user.id,
+                                                                 username=message.from_user.username))
+    else:
+        await message.answer('Ты уже зарегистрирован')
+
+@dp.callback_query(F.data.startswith('registration'))
+async def registration(callback_data: types.CallbackQuery, state: FSMContext):
+    _, tg_id, username = callback_data.data.split(':')
+    tg_id = int(tg_id)
+    if tg_id not in pending_teachers:
+        await callback_data.message.edit_text('Запрос не найден или уже обработан')
+        return
+    user_data = pending_teachers[tg_id]
+    db.add_teacher(tg_id=user_data['tg_id'], name=user_data['username'])
+    await callback_data.message.edit_text(text=f'Учитель @{user_data['username']} добавлен в общий список',
+                                          reply_markup=main_menu())
+    await bot.send_message(text='Твоя регистрация завершена', chat_id=tg_id)
+    del pending_teachers[tg_id]
+
+
 
 @dp.callback_query(F.data == 'exit')
 async def start_at_call(call: types.CallbackQuery, state: FSMContext):
@@ -58,11 +87,11 @@ async def teacher_about(callback_query: types.CallbackQuery, state: FSMContext):
     data = callback_query.data.split(':')[1]
     teacher = db.get_teacher(tg_id=int(data))
     if teacher is not None:
-        group_names = ', '.join([group.name for group in teacher.groups])
+        group_names = ', '.join([group.name for group in teacher.groups]) if teacher.groups else 'их нет'
         await callback_query.message.edit_text(text=f'''
 Учитель: {teacher.name}
 Его группы: {group_names}
-Косяки: {teacher.notes}
+Косяки: {teacher.notes if teacher.notes else "их нет"}
 Баллы: {teacher.scores}
 ''',
                                                inline_message_id=callback_query.inline_message_id,
@@ -79,7 +108,7 @@ async def put_or_delete(call: types.CallbackQuery, state: FSMContext):
         await call.message.edit_text('Какой косяк че не так сделал', reply_markup=main_menu())
     elif data[0] == 'delete':
         db.delete_teacher(tg_id=int(data[1]))
-        await call.message.edit_text('Удалил дауна', reply_markup=main_menu())
+        await call.message.edit_text('Удалил учителя из общего списка', reply_markup=main_menu())
 
 @dp.message(Misstake.problem)
 async def _misstake(msg: types.Message, state: FSMContext):
@@ -95,6 +124,11 @@ async def substract(msg: types.Message, state: FSMContext):
     data = await state.get_data()
     db.subtract_score(tg_id=int(data['tg_id']), value=int(data['scores']), note=data['problem'])
     await msg.answer('Косяк записан', reply_markup=main_menu())
+    try:
+        await bot.send_message(chat_id=data['tg_id'], text=f'{data['problem']}, сняли с тебя {data["scores"]} баллов')
+    except Exception as e:
+        print(e)
+        await msg.answer('Учитель не зарегистрирован в боте так что я не смог отправить ему уведомление')
     await state.clear()
 
 
@@ -111,6 +145,6 @@ async def add_group(message: types.Message, state: FSMContext):
     await state.update_data(group_name=message.text)
     data = await state.get_data()
     db.create_group(group_name=data['group_name'], teacher_tg_id=data['tg_id'])
-    await message.answer('Добавлена группа', reply_markup=main_menu())
+    await message.answer(text='Добавлена группа', reply_markup=main_menu())
     await state.clear()
 

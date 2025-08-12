@@ -12,7 +12,7 @@ load_dotenv(verbose=True)
 
 token = str(os.getenv('token'))
 
-owner = os.getenv('owner')
+owner = int(os.getenv('owner'))
 
 engine = create_engine('sqlite:///database.db')
 
@@ -124,7 +124,7 @@ class DataBase:
         try:
             teacher = self.session.query(Teacher).filter_by(tg_id=tg_id).first()
             teacher.scores -= value
-            teacher.notes = note
+            teacher.notes = f"{teacher.notes}, {note}" if teacher.notes else note
             self.session.commit()
             self.session.close()
         except Exception as e:

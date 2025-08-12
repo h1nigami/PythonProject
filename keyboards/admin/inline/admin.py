@@ -6,6 +6,12 @@ def admin_panel() -> InlineKeyboardMarkup:
     builder.button(text='Список учителей', callback_data='list_teachers')
     return builder.as_markup()
 
+def teacher_registration(tg_id: int, username: str) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    builder.button(text='Да', callback_data=f'registration:{tg_id}:{username}')
+    builder.button(text='Нет', callback_data='exit')
+    return builder.as_markup()
+
 def teachers(teachers: list) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for teacher in teachers:
