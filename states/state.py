@@ -1,3 +1,5 @@
+from symtable import Class
+
 from aiogram.fsm.state import State, StatesGroup
 
 class AddGroup(StatesGroup):
@@ -7,6 +9,11 @@ class AddGroup(StatesGroup):
 class AddTeacher(StatesGroup):
     tg_id = State()
     name = State()
+
+class EditTeacher(StatesGroup):
+    tg_id = State()
+    name = State()
+
 
 class Misstake(StatesGroup):
     tg_id = State()

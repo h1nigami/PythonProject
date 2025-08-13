@@ -36,8 +36,9 @@ def teachers(teachers: list) -> InlineKeyboardMarkup:
 def about(teacher) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.button(text='⚠️ Косяк', callback_data=f'mistake:{teacher.tg_id}')
-    builder.button(text='🗑️ Удалить', callback_data=f'delete:{teacher.tg_id}')
     builder.button(text='➕ Добавить группу', callback_data=f'new_group:{teacher.tg_id}')
+    builder.button(text='✏️ Отредактировать имя', callback_data=f'edit_teacher_name:{teacher.tg_id}')
+    builder.button(text='🗑️ Удалить', callback_data=f'delete:{teacher.tg_id}')
     builder.button(text='🔙 Главное меню', callback_data='exit')
     builder.adjust(1)
     return builder.as_markup()

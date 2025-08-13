@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 
@@ -111,6 +112,17 @@ class DataBase:
             self.session.rollback()
             return None
 
+    def edit_teacher_name(self, tg_id: int, new_name: str):
+        try:
+            teacher = self.session.query(Teacher).filter_by(tg_id=tg_id).first()
+            teacher.name = new_name
+            self.session.commit()
+        except Exception as e:
+            self.logger.warning(e)
+            self.session.rollback()
+
+
+
     def subtract_score(self, tg_id: int, value: int, note: str) -> None:
         """
         Уменьшает баллы учителя на указанное значение.
@@ -134,6 +146,32 @@ class DataBase:
             self.session.rollback()
         finally:
             self.session.close()
+
+    def reset_monthly_scores(self):
+        """Сбрасывает баллы до исходного значения и добавляет в статистику"""
+        teachers = self.session.query(Teacher).all()
+        months = {
+            1: 'Январь',
+            2: 'Февраль',
+            3: 'Март',
+            4: 'Апрель',
+            5: 'Май',
+            6: 'Июнь',
+            7: 'Июль',
+            8: 'Август',
+            9: 'Сентябрь',
+            10: 'Октябрь',
+            11: 'Ноябрь',
+            12: 'Декабрь'
+        }
+        now = datetime.datetime.now()
+        for teacher in teachers:
+            teacher.scores = 100
+            stat = Statistics(teacher_name=teacher.name,
+                              month=months[now.month],
+                              score=teacher.scores)
+            self.session.add(stat)
+        self.session.commit()
 
     def add_admin(self, tg_id: int, name: str, group: Group | None = None) -> None:
         """

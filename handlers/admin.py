@@ -2,7 +2,7 @@ from aiogram.fsm.context import FSMContext
 from data import DataBase, OWNER_ID
 from loader import dp, bot
 from permissions import IsAdminCall, IsAdminMessage
-from states import AddGroup, AddTeacher, Misstake
+from states import AddGroup, AddTeacher, Misstake, EditTeacher
 from aiogram import types, F
 from keyboards.admin.inline import *
 from sqlalchemy import text
@@ -156,6 +156,46 @@ async def show_teacher_details(callback: types.CallbackQuery):
              f'⭐ Баллы: {teacher.scores}',
         reply_markup=about(teacher)
     )
+
+@dp.callback_query(F.data.startswith('edit_teacher_name:'))
+async def start_edit_teacher_name(call: types.CallbackQuery, state: FSMContext):
+    data = call.data.split(':')
+    await state.set_state(EditTeacher.name)
+    await state.update_data(tg_id=int(data[-1]))
+    await call.message.edit_text(
+        '✏️ Введите новое имя для преподавателя:',
+        reply_markup=main_menu()
+    )
+
+@dp.message(EditTeacher.name)
+async def show_edit_teacher_name(message: types.Message, state: FSMContext):
+    await state.update_data(name=message.text.strip())
+    try:
+        data = await state.get_data()
+        teacher = db.get_teacher(tg_id=int(data['tg_id']))
+        groups_list = ', '.join([group.name for group in teacher.groups]) if teacher.groups else 'не назначены'
+        notes = teacher.notes if teacher.notes else 'отсутствуют'
+        db.edit_teacher_name(
+            tg_id=int(data['tg_id']),
+            new_name=data['name']
+        )
+        await message.answer(
+            text=f'✅ Имя преподавателя успешно изменено!\n\n'
+                 f'👨‍🏫 Профиль преподавателя:\n\n'
+                 f'📌 ФИО: {teacher.name}\n'
+                 f'👥 Группы: {groups_list}\n'
+                 f'📝 Замечания: {notes}\n'
+                 f'⭐ Баллы: {teacher.scores}',
+            reply_markup=about(teacher)  # Предполагается, что teacher доступен
+        )
+        await state.clear()
+    except Exception as e:
+        print(f"Ошибка при изменении имени преподавателя: {e}")
+        await message.answer(
+            '❌ Произошла ошибка при изменении имени. Пожалуйста, попробуйте позже.',
+            reply_markup=main_menu()
+        )
+        await state.clear()
 
 
 @dp.callback_query(F.data.startswith('delete:'))
