@@ -121,26 +121,26 @@ class DataBase:
             self.logger.warning(e)
             self.session.rollback()
 
-
-
-    def subtract_score(self, tg_id: int, value: int) -> None:
+    def subtract_score(self, tg_id: int, value: int, note: str) -> None:
         """
         Уменьшает баллы учителя на указанное значение.
 
         Args:
             tg_id: Telegram ID учителя
             value: Количество баллов для вычитания
+            note: Заметка
 
         Raises:
             SQLAlchemyError: При ошибках работы с базой данных
         """
         try:
             teacher = self.session.query(Teacher).filter_by(tg_id=tg_id).first()
-            teacher.score -= value
+            teacher.scores -= value
+            teacher.notes = f"{teacher.notes}, {note}" if teacher.notes else note
             self.session.commit()
             self.session.close()
         except Exception as e:
-            self.logger.warning(e)
+            self.logger.info(f'Ошибка {e}')
             self.session.rollback()
         finally:
             self.session.close()
@@ -267,3 +267,14 @@ class DataBase:
         finally:
             self.session.close()
 
+    def get_all_groups(self) -> list[type[Group]]:
+        groups = self.session.query(Group).all()
+        return groups
+
+    def get_teachers_group(self, tg_id: int) -> list[type[Group]]:
+        groups = self.session.query(Group).filter_by(teacher_id=tg_id).all()
+        return groups
+
+    def get_one_group(self, database_id: int) -> Group | None:
+        group = self.session.query(Group).filter_by(id=database_id).first()
+        return group

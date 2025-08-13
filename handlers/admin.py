@@ -279,7 +279,7 @@ async def process_score_deduction(msg: types.Message, state: FSMContext):
     await state.update_data(scores=int(msg.text))
     data = await state.get_data()
 
-    group_info = f"В группе: {str(data['group'].name)} " if data.get('group') else ""
+    group_info = f"В группе: {str(data['group'].name)}, " if data.get('group') else ""
     problem_text = f"{group_info}{str(data['problem']).lower()}"
 
     db.subtract_score(
