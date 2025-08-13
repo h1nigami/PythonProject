@@ -197,6 +197,19 @@ async def show_edit_teacher_name(message: types.Message, state: FSMContext):
         )
         await state.clear()
 
+@dp.callback_query(F.data.startswith('statistic:'))
+async def show_statistics(call: types.CallbackQuery, state: FSMContext):
+    teacher = db.get_teacher(tg_id=int(call.data.split(':')[1]))
+    if teacher:
+        stat_list = db.get_teacher_statistic(tg_id=teacher.tg_id)
+        if len(stat_list) > 0:
+            for stat in stat_list:
+                await call.message.answer(f'Учитель {stat.name}'
+                                          f'Месяц: {stat.month}'
+                                          f'Баллы: {stat.score}',
+                                          reply_markup=about(teacher))
+        else:
+            await call.message.edit_text(f'Статистика на этого преподавателя еще не готова', reply_markup=main_menu())
 
 @dp.callback_query(F.data.startswith('delete:'))
 async def delete_teacher(call: types.CallbackQuery):
