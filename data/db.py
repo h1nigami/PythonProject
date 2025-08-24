@@ -164,11 +164,12 @@ class DataBase:
         }
         now = datetime.datetime.now()
         for teacher in teachers:
-            teacher.scores = 100
             stat = Statistics(teacher_name=teacher.name,
                               month=months[now.month],
                               score=teacher.scores)
             self.session.add(stat)
+            teacher.scores = 100
+            teacher.notes = ""
         self.session.commit()
 
     def get_teacher_statistic(self, tg_id: int) -> list[Any] | None:
@@ -179,6 +180,16 @@ class DataBase:
             for stat in statistics:
                 stat_list.append(stat)
             return stat_list
+        except Exception as e:
+            self.logger.warning(e)
+            self.session.rollback()
+
+    def delete_statistic(self):
+        try:
+            statistic = self.session.query(Statistics).all()
+            for stat in statistic:
+                self.session.delete(stat)
+            self.session.commit()
         except Exception as e:
             self.logger.warning(e)
             self.session.rollback()
@@ -256,6 +267,8 @@ class DataBase:
             self.session.add(new_group)
             self.session.commit()
             teacher.groups.append(new_group)
+            teacher.scores += 1000
+            teacher.max_score += 1000
             self.session.commit()
 
             return new_group
@@ -266,6 +279,12 @@ class DataBase:
             return None
         finally:
             self.session.close()
+
+    def delete_group(self, group_id: int) -> None:
+        group = self.session.query(Group).filter_by(id=group_id).first()
+        self.session.delete(group)
+        self.session.commit()
+        return
 
     def get_all_groups(self) -> list[type[Group]]:
         groups = self.session.query(Group).all()

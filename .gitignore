@@ -7,3 +7,5 @@ data/.env
 *.idea
 database.db-wal
 database.db-shm
+alembic
+alembic.ini

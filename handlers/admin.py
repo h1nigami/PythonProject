@@ -201,13 +201,15 @@ async def show_edit_teacher_name(message: types.Message, state: FSMContext):
 async def show_statistics(call: types.CallbackQuery, state: FSMContext):
     teacher = db.get_teacher(tg_id=int(call.data.split(':')[1]))
     if teacher:
+        teacher_scores_percent = teacher.max_score // 100
         stat_list = db.get_teacher_statistic(tg_id=teacher.tg_id)
         if len(stat_list) > 0:
             for stat in stat_list:
-                await call.message.answer(f'Учитель {stat.name}'
-                                          f'Месяц: {stat.month}'
-                                          f'Баллы: {stat.score}',
-                                          reply_markup=about(teacher))
+                await call.message.answer(f'Учитель {stat.teacher_name}\n'
+                                          f'Месяц: {stat.month}\n'
+                                          f'Баллы: {stat.score} ({stat.score // teacher_scores_percent}%)\n',
+                                          )
+            await call.message.answer("Что дальше?", reply_markup=about(teacher))
         else:
             await call.message.edit_text(f'Статистика на этого преподавателя еще не готова', reply_markup=main_menu())
 
@@ -337,3 +339,15 @@ async def complete_group_add(message: types.Message, state: FSMContext):
         reply_markup=admin_panel()
     )
     await state.clear()
+
+@dp.callback_query(F.data.startswith('delete_group:'))
+async def show_list_groups_to_delete(call: types.CallbackQuery, state: FSMContext):
+    teacher_id = call.data.split(':')[1]
+    groups_list = db.get_teachers_group(teacher_id)
+    await call.message.edit_text('🗑️ Выберите группу для удаления', reply_markup=groups(groups_list=groups_list))
+
+@dp.callback_query(F.data.startswith('group:'))
+async def delete_group(call: types.CallbackQuery, state: FSMContext):
+    group_id = int(call.data.split(':')[1])
+    db.delete_group(group_id)
+    await call.message.edit_text('✅ Группа успешно удалена', reply_markup=main_menu())
