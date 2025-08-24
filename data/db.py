@@ -1,20 +1,20 @@
 import datetime
 import logging
 import os
+from typing import Any
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
-from data.models import Group
 from .models import *
 
 load_dotenv(verbose=True)
 
 TOKEN = str(os.getenv('token'))
 
-OWNER_ID = int(os.getenv('owner'))
+OWNER_ID = os.getenv('owner')
 
 engine = create_engine('sqlite:///database.db')
 
@@ -23,7 +23,7 @@ class DataBase:
     """Класс для работы с базой данных бота, управляющий учителями и группами."""
 
     def __init__(self):
-        """Инициализирует подключение к базе данных и настраивает логирование."""
+        """Инициализирует подключение к базе данных и настраивает логгирование."""
         self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
         logging.basicConfig(level=logging.INFO)
@@ -102,7 +102,7 @@ class DataBase:
     def get_all_teachers(self) -> list[type[Teacher]] | None:
         """
         Возвращает всех учителей
-        :return: list с объектами Teacher
+        :return: list с обьектами Teacher
         """
         try:
             teachers = self.session.query(Teacher).all()
@@ -120,8 +120,6 @@ class DataBase:
         except Exception as e:
             self.logger.warning(e)
             self.session.rollback()
-
-
 
     def subtract_score(self, tg_id: int, value: int, note: str) -> None:
         """
@@ -173,6 +171,18 @@ class DataBase:
             self.session.add(stat)
         self.session.commit()
 
+    def get_teacher_statistic(self, tg_id: int) -> list[Any] | None:
+        try:
+            teacher = self.session.query(Teacher).filter_by(tg_id=tg_id).first()
+            stat_list = []
+            statistics = self.session.query(Statistics).filter_by(teacher_name=teacher.name).all()
+            for stat in statistics:
+                stat_list.append(stat)
+            return stat_list
+        except Exception as e:
+            self.logger.warning(e)
+            self.session.rollback()
+
     def add_admin(self, tg_id: int, name: str, group: Group | None = None) -> None:
         """
         Добавляет администратора с возможностью привязки к группе.
@@ -196,8 +206,7 @@ class DataBase:
                 self.session.add(admin)
                 self.session.commit()
                 self.session.close()
-        except Exception as e:
-            self.logger.warning(e)
+        except:
             self.session.rollback()
         finally:
             self.session.close()
@@ -269,5 +278,3 @@ class DataBase:
     def get_one_group(self, database_id: int) -> Group | None:
         group = self.session.query(Group).filter_by(id=database_id).first()
         return group
-
-

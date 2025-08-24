@@ -38,9 +38,9 @@ class Statistics(Base):
     """Статистика по месяцам"""
     __tablename__ = 'statistics'
 
-    teacher_name = Column(String, nullable=False, primary_key=True)
-    month = Column(Integer, nullable=False)
-    score = Column(Integer, nullable=False)
+    teacher_name = Column(String, nullable=False, primary_key=True, unique=False)
+    month = Column(Integer, nullable=False, unique=False)
+    score = Column(Integer, nullable=False,unique=False)
 
     def __repr__(self):
         f"<Statistics(teacher_name={self.teacher_name}, month={self.month}, score={self.score})>"
