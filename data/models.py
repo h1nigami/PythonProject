@@ -29,6 +29,7 @@ class Group(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=False)
     teacher_id = Column(BigInteger, ForeignKey('teachers.tg_id'), nullable=True)
+    scores = Column(Integer, nullable=False)
 
     teacher = relationship('Teacher', back_populates='groups')
 

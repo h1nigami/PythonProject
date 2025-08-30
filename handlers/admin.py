@@ -324,26 +324,39 @@ async def start_adding_group(call: types.CallbackQuery, state: FSMContext):
         reply_markup=main_menu()
     )
 
-
 @dp.message(AddGroup.group_name)
 async def complete_group_add(message: types.Message, state: FSMContext):
     await state.update_data(group_name=message.text)
-    data = await state.get_data()
-    db.create_group(
-        group_name=data['group_name'],
-        teacher_tg_id=data['tg_id']
-    )
+    await message.answer('Введите количество баллов за группу', reply_markup=main_menu())
+    await state.set_state(AddGroup.scores)
 
-    await message.answer(
-        f'✅ Группа "{data["group_name"]}" успешно создана',
-        reply_markup=admin_panel()
-    )
-    await state.clear()
+@dp.message(AddGroup.scores)
+async def score_adding_group(message: types.Message, state: FSMContext):
+    if message.text.isdigit():
+        await state.update_data(scores=int(message.text))
+        data = await state.get_data()
+        db.create_group(
+            group_name=data['group_name'],
+            teacher_tg_id=data['tg_id'],
+            scores=data['scores'],
+        )
+
+        await message.answer(
+            f'✅ Группа "{data["group_name"]}" успешно создана',
+            reply_markup=admin_panel()
+        )
+        await state.clear()
+    else:
+        await message.answer('Введите количество баллов в числовом формате', reply_markup=main_menu())
+
+
+
+
 
 @dp.callback_query(F.data.startswith('delete_group:'))
 async def show_list_groups_to_delete(call: types.CallbackQuery, state: FSMContext):
     teacher_id = call.data.split(':')[1]
-    groups_list = db.get_teachers_group(teacher_id)
+    groups_list = db.get_teachers_group(tg_id=int(teacher_id))
     await call.message.edit_text('🗑️ Выберите группу для удаления', reply_markup=groups(groups_list=groups_list))
 
 @dp.callback_query(F.data.startswith('group:'))

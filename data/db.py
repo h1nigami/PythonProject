@@ -168,7 +168,7 @@ class DataBase:
                               month=months[now.month],
                               score=teacher.scores)
             self.session.add(stat)
-            teacher.scores = 100
+            teacher.scores = teacher.max_score
             teacher.notes = ""
         self.session.commit()
 
@@ -241,7 +241,7 @@ class DataBase:
         else:
             return False
 
-    def create_group(self, group_name: str, teacher_tg_id: int) -> Group | None:
+    def create_group(self, group_name: str, teacher_tg_id: int, scores: int) -> Group | None:
         """
         Создает новую группу и связывает ее с учителем.
 
@@ -263,12 +263,12 @@ class DataBase:
                 print(f"Учитель с tg_id {teacher_tg_id} не найден")
                 return None
 
-            new_group = Group(name=group_name, teacher_id=teacher.id)
+            new_group = Group(name=group_name, teacher_id=teacher.id, scores=scores)
             self.session.add(new_group)
             self.session.commit()
             teacher.groups.append(new_group)
-            teacher.scores += 1000
-            teacher.max_score += 1000
+            teacher.scores += scores
+            teacher.max_score += scores
             self.session.commit()
 
             return new_group
@@ -282,6 +282,9 @@ class DataBase:
 
     def delete_group(self, group_id: int) -> None:
         group = self.session.query(Group).filter_by(id=group_id).first()
+        teacher = self.session.query(Teacher).filter_by(tg_id=group.teacher_id).first()
+        teacher.scores -= group.scores
+        teacher.max_score -= group.scores
         self.session.delete(group)
         self.session.commit()
         return
