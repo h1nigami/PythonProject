@@ -1,5 +1,5 @@
 from aiogram.fsm.context import FSMContext
-from data import DataBase, OWNER_ID
+from data import DataBase, OWNER_ID, PASSWORD
 from loader import dp, bot
 from permissions import IsAdminCall, IsAdminMessage
 from states import AddGroup, AddTeacher, Misstake, EditTeacher
@@ -34,7 +34,15 @@ async def handle_start(message: types.Message):
             )
         )
     else:
-        await message.answer('ℹ️ Вы уже зарегистрированы в системе')
+        notes = teacher.notes if teacher.notes else 'отсутствуют'
+        await message.answer(
+            f"───────────────\n"
+            f"👤 <b>Профиль учителя</b>\n"
+            f"───────────────\n"
+            f"▪️ <b>Имя:</b> {teacher.name}\n"
+            f"▪️ 🎯 <b>Баллы:</b> {teacher.scores}\n"
+            f"▪️ 📋 <b>Замечания:</b>\n<code>{notes}</code>"
+        )
 
 
 @dp.callback_query(F.data.startswith('registration:'))
@@ -72,7 +80,7 @@ async def return_to_admin_panel(call: types.CallbackQuery, state: FSMContext):
     )
 
 
-@dp.message(F.text == '308012')
+@dp.message(F.text == PASSWORD)
 async def admin_access(message: types.Message):
     await message.answer(
         '⚙️ Панель администратора',

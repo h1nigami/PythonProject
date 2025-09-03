@@ -16,6 +16,8 @@ TOKEN = str(os.getenv('token'))
 
 OWNER_ID = os.getenv('owner')
 
+PASSWORD = os.getenv('password')
+
 engine = create_engine('sqlite:///database.db')
 
 
