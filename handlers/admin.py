@@ -1,7 +1,7 @@
 from aiogram.fsm.context import FSMContext
 from data import DataBase, OWNER_ID, PASSWORD
 from loader import dp, bot
-from permissions import IsAdminCall, IsAdminMessage
+from permissions import IsAdminCall, IsAdminMessage, IsOwnerMessage, IsOwnerCall
 from states import AddGroup, AddTeacher, Misstake, EditTeacher
 from aiogram import types, F
 from keyboards.admin.inline import *
@@ -80,7 +80,7 @@ async def return_to_admin_panel(call: types.CallbackQuery, state: FSMContext):
     )
 
 
-@dp.message(F.text == PASSWORD)
+@dp.message(F.text == PASSWORD, IsOwnerMessage())
 async def admin_access(message: types.Message):
     await message.answer(
         '⚙️ Панель администратора',
@@ -88,7 +88,7 @@ async def admin_access(message: types.Message):
     )
 
 
-@dp.callback_query(F.data == 'list_teachers')
+@dp.callback_query(F.data == 'list_teachers', IsOwnerCall())
 async def show_teachers_list(call: types.CallbackQuery):
     teachers_list = db.get_all_teachers
     if not teachers_list:

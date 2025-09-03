@@ -17,8 +17,8 @@ class IsAdminCall(Filter):
 
 class IsOwnerMessage(Filter):
     async def __call__(self, message: types.Message):
-        return message.from_user.id == OWNER_ID
+        return int(message.from_user.id) == int(OWNER_ID)
 
 class IsOwnerCall(Filter):
     async def __call__(self, call: types.CallbackQuery):
-        return call.from_user.id == OWNER_ID
+        return int(call.from_user.id) == int(OWNER_ID)
